@@ -18,7 +18,7 @@ cd ~/base-env
 ```
 Follow the prompt(s) of the install script.
 
-3. (Optional) If you skip the script's source prompt:
+3. Apply changes to `.bashrc`:
 ```bash
 source ~/.bashrc
 ```
