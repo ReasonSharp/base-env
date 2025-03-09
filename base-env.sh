@@ -38,6 +38,11 @@ cd() {
 adjust_home() {
     # Get the command about to run (BASH_COMMAND holds it)
     local cmd_line="$BASH_COMMAND"
+
+    # Skip if this is an autocomplete attempt
+    if [[ -n "$COMP_LINE" || -n "$COMP_POINT" ]]; then
+	    return 0
+    fi
     
     # If interactive
     if [[ $- =~ i ]]; then
