@@ -30,7 +30,7 @@ if ! cp "$SOURCE_FILE" ~/.base-env.sh; then
 fi
 
 # add to .bashrc if not already present
-BASHRC_LINE='if [ -f ~/.base-env.sh ]; then BASE="'"$BASE"'" . ~/.base-env.sh; fi'
+BASHRC_LINE='if [ -f ~/.base-env.sh ]; then export BASE="'"$BASE"'";. ~/.base-env.sh; fi'
 if ! grep -Fx "$BASHRC_LINE" ~/.bashrc >/dev/null; then
 	echo "$BASHRC_LINE" >> ~/.bashrc
 	echo "added sourcing line to ~/.bashrc"

@@ -26,47 +26,29 @@ REAL_HOME=$(getent passwd "$USER" | cut -d: -f6)
 export HOME=$BASE
 cd "$HOME" 2>/dev/null || cd "$REAL_HOME" # fallback if $BASE dir doesn't exist yet
 
-# custom cd behavior
 cd() {
- if [ $# -eq 0 ]; then
-  command cd "$BASE"
- else
-  command cd "$@"
- fi
+	if [ $# -eq 0 ]; then
+		command cd "$BASE"
+	else
+		command cd "$@"
+	fi
 }
 
 # adjust HOME before each command
 adjust_home() {
     # Get the command about to run (BASH_COMMAND holds it)
     local cmd_line="$BASH_COMMAND"
-    local cmd=$(echo "$cmd_line" | awk '{print $1}')
-    local ret=0
     
     # If interactive
     if [[ $- =~ i ]]; then
-            # Check if the command starts with ~/ and rewrite to $BASE
-	    if [[ "$cmd_line" =~ ^(~|\$HOME)\/([^[:space:]]+)(.*) ]]; then
-	            local script_name="${BASH_REMATCH[2]}"
-		    local args="${BASH_REMATCH[3]}"
-		    # Suppress original command
-		    cmd_line="$BASE/$script_name$args"
-		    ret=1
+	    local new_cmd=$(echo "$cmd_line" | sed "s|^~/|$BASE/|g;s|^\\$HOME/|$BASE/|g;s|^\\${HOME}/|${BASE}/|g")
+	    if [[ "$new_cmd" != "$cmd_line" ]]; then
+		    eval "HOME=\"$REAL_HOME\" $new_cmd"
+		    return 1
             fi
     fi
-    # Check if it's one of our exceptions
-    case "$cmd" in
-        ls|mv|cp|cd|rm|mkdir|touch)
-            export HOME="${BASE}"
-            ;;
-        *)
-            export HOME="$REAL_HOME"
-            ;;
-    esac
-    if [ $ret -eq 1 ]; then
-	    # Rewrite ~/script.sh to $BASE/script.sh and execute
-            eval "$cmd_line"
-    fi
-    return $ret
+    eval "HOME=\"$REAL_HOME\" $new_cmd"
+    return 1
 }
 
 # reset HOME to $BASE after each command
