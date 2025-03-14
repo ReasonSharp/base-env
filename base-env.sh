@@ -48,7 +48,7 @@ adjust_home() {
     if [[ $- =~ i ]]; then
 	    local new_cmd=$(echo "$cmd_line" | sed "s|^~/|$BASE/|g;s|^\\$HOME/|$BASE/|g;s|^\\${HOME}/|${BASE}/|g")
 	    if [[ "$new_cmd" != "$cmd_line" ]]; then
-		    eval "HOME=\"$REAL_HOME\" $new_cmd"
+		    ( HOME="$REAL_HOME" eval "$new_cmd" )
 		    return 1
             fi
     fi
