@@ -24,7 +24,9 @@ REAL_HOME=$(getent passwd "$USER" | cut -d: -f6)
 
 # set HOME to $BASE as default for interactive shell
 export HOME=$BASE
-cd "$HOME" 2>/dev/null || cd "$REAL_HOME" # fallback if $BASE dir doesn't exist yet
+if [ -z "$preserve_path" ]; then
+ cd "$HOME" 2>/dev/null || cd "$REAL_HOME" # fallback if $BASE dir doesn't exist yet
+fi
 
 cd() {
 	if [ $# -eq 0 ]; then
@@ -57,14 +59,12 @@ process_enter() {
  # DEBUG: echo "new_cmd='$new_cmd'" >&2 # sed doesn't appear to have had any effect
  # Run command, capture output, let original line stay
  READLINE_LINE=""
- echo -e "${PS1@P}$cmd_line"  # recreate original prompt line
+ echo -e "${PS1@P}$cmd_line"   # recreate original prompt line
+ ( exit $be_retval )           # produce the previous exit status
  HOME="$REAL_HOME" eval "$new_cmd"
+ export be_retval=$?           # remember command's return value
  history -s "$cmd_line"        # and add it back to history without our modifications, because that's what we actually typed
  READLINE_POINT=0
-}
-
-reset_home() {
-    export HOME="$BASE"
 }
 
 if [[ $- =~ i ]]; then
@@ -74,5 +74,5 @@ if [[ $- =~ i ]]; then
  echo ': still on multiline commands, not all quoting is parsed correctly, resulting in possible bad commands'
  echo ': prompt will always print ~'
  bind -x '"\C-m": process_enter'  # Bind Enter (Ctrl+M) to function
- PROMPT_COMMAND='reset_home'
+ export be_retval=0               # produce initial exit status
 fi
