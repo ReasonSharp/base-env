@@ -58,7 +58,7 @@ process_enter() {
  # Run command, capture output, let original line stay
  READLINE_LINE=""
  echo -e "${PS1@P}$cmd_line"  # recreate original prompt line
- HOME=\"$REAL_HOME\" eval "$new_cmd"
+ HOME="$REAL_HOME" eval "$new_cmd"
  history -s "$cmd_line"        # and add it back to history without our modifications, because that's what we actually typed
  READLINE_POINT=0
 }
@@ -72,6 +72,7 @@ if [[ $- =~ i ]]; then
  echo ': ~, $HOME and ${HOME} don''t get replaced properly yet'
  echo ': on multiline commands, the ''> '' is not printed on subsequent lines'
  echo ': still on multiline commands, not all quoting is parsed correctly, resulting in possible bad commands'
+ echo ': prompt will always print ~'
  bind -x '"\C-m": process_enter'  # Bind Enter (Ctrl+M) to function
  PROMPT_COMMAND='reset_home'
 fi
