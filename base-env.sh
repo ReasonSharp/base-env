@@ -34,38 +34,43 @@ cd() {
 	fi
 }
 
-# adjust HOME before each command
-adjust_home() {
-    # Get the command about to run (BASH_COMMAND holds it)
-    local cmd_line="$BASH_COMMAND"
-
-    # Skip if this is an autocomplete attempt
-    if [[ -n "$COMP_LINE" || -n "$COMP_POINT" ]]; then
-	    return 0
-    fi
-    
-    # If interactive
-    if [[ $- =~ i ]]; then
-	    local new_cmd=$(echo "$cmd_line" | sed "s|^~/|$BASE/|g;s|^\\$HOME/|$BASE/|g;s|^\\${HOME}/|${BASE}/|g")
-	    if [[ "$new_cmd" != "$cmd_line" ]]; then
-		    ( HOME="$REAL_HOME" eval "$new_cmd" )
-		    return 1
-            fi
-    fi
-    eval "HOME=\"$REAL_HOME\" $new_cmd"
-    return 1
+# Function to process Enter key press
+process_enter() {
+ local cmd_line="$READLINE_LINE"
+ if [[ -z "$cmd_line" || "$cmd_line" =~ ^\ *# ]]; then
+  READLINE_LINE=""
+  echo -e "${PS1@P}$cmd_line"
+  return
+ fi
+ # DEBUG: echo "!!! ENTER !!! -- $cmd_line" >&2  # Debug to stderr
+ # Check for incomplete quotes -- this doesn't work for all quotes and in all cases, need parser
+ local quote_count=$(echo "$cmd_line" | grep -o '"' | wc -l)
+ if [[ $((quote_count % 2)) -ne 0 ]]; then
+  # DEBUG: echo "-- mismatched quotes --" >&2
+  READLINE_LINE="${cmd_line}"$'\n'
+  READLINE_POINT=${#READLINE_LINE}
+  return # $PS1 should be replaced with '> ' to imitate bash behavior, then reverted back when all quotes are closed and command is ready to execute
+         # or maybe replaced with '' and '> ' should be echoed. For now I leave it as is.
+ fi
+ # replace any and all instances of ~, $HOME and ${HOME} with ${BASE}, $BASE and ${BASE} respectively - doesn't work sometimes, likely because ^ is start of string, not start of word
+ local new_cmd=$(echo "$cmd_line" | sed "s|^~/|\${BASE}/|g;s|^\\$HOME/|\$BASE/|g;s|^\\${HOME}/|\${BASE}/|g")
+ # DEBUG: echo "new_cmd='$new_cmd'" >&2 # sed doesn't appear to have had any effect
+ # Run command, capture output, let original line stay
+ READLINE_LINE=""
+ echo -e "${PS1@P}$cmd_line"  # recreate original prompt line
+ HOME=\"$REAL_HOME\" eval "$new_cmd"
+ history -s "$cmd_line"        # and add it back to history without our modifications, because that's what we actually typed
+ READLINE_POINT=0
 }
 
-# reset HOME to $BASE after each command
 reset_home() {
-        export HOME="${BASE}"
+    export HOME="$BASE"
 }
 
-# apply only in interactive shells
 if [[ $- =~ i ]]; then
-	shopt -u extdebug # Unset extdebug
-	shopt -s extdebug # Then enable it
-        trap 'adjust_home' DEBUG
-        PROMPT_COMMAND='reset_home'
+ echo "Things that don't work yet:"
+ echo '~, $HOME and ${HOME} don''t get replaced properly yet'
+ echo 'on multiline commands, the ''> '' is not printed on subsequent lines'
+ bind -x '"\C-m": process_enter'  # Bind Enter (Ctrl+M) to function
+ PROMPT_COMMAND='reset_home'
 fi
-
