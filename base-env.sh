@@ -69,8 +69,9 @@ reset_home() {
 
 if [[ $- =~ i ]]; then
  echo "Things that don't work yet:"
- echo '~, $HOME and ${HOME} don''t get replaced properly yet'
- echo 'on multiline commands, the ''> '' is not printed on subsequent lines'
+ echo ': ~, $HOME and ${HOME} don''t get replaced properly yet'
+ echo ': on multiline commands, the ''> '' is not printed on subsequent lines'
+ echo ': still on multiline commands, not all quoting is parsed correctly, resulting in possible bad commands'
  bind -x '"\C-m": process_enter'  # Bind Enter (Ctrl+M) to function
  PROMPT_COMMAND='reset_home'
 fi
